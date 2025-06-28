@@ -11,7 +11,6 @@ class Post(BaseModel):
     title: str
     content: str
     published: bool = True
-    rating: Optional[int] = None
     
 
 store_posts = [{"title": "title of post 1", "content": "content of post 1", "id": 1}, {"title": "Favourite Anime", "content": "One Piece", "id": 2}]
