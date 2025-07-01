@@ -1,16 +1,17 @@
-from app import schemas, password_hash, models
+from app import schemas, models, utils
 from app.database import get_db
 from fastapi import HTTPException, status, Depends, APIRouter
 from sqlalchemy.orm import Session
 
 router = APIRouter(
-    prefix="/users"
+    prefix="/users",
+    tags=["users"]
 )
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserRes)
 def create_user(user: schemas.CreateUser, db: Session = Depends(get_db)):
     # hash the user's password
-    hashed_password = password_hash.hash(user.password)
+    hashed_password = utils.hash(user.password)
     user.password = hashed_password
     
     new_user = models.Users(**user.dict())

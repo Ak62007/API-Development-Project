@@ -4,7 +4,8 @@ from fastapi import Response, HTTPException, status, Depends, APIRouter
 from sqlalchemy.orm import Session
 
 router = APIRouter(
-    prefix="/posts"
+    prefix="/posts",
+    tags=["posts"]
 )
 
 @router.get("/", response_model=list[schemas.Post])

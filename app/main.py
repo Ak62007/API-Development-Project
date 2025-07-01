@@ -7,9 +7,9 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from sqlalchemy.orm import Session
 import time
-from app import models, schemas, password_hash
+from app import models, schemas, utils
 from app.database import engine, get_db
-from app.routers import posts, users
+from app.routers import posts, users, auth
 
 app = FastAPI()
 
@@ -57,3 +57,4 @@ def root():
 
 app.include_router(posts.router)
 app.include_router(users.router)
+app.include_router(auth.router)
