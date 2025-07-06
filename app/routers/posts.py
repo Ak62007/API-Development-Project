@@ -1,4 +1,4 @@
-from app import schemas, models
+from app import schemas, models, oauth2
 from app.database import get_db
 from fastapi import Response, HTTPException, status, Depends, APIRouter
 from sqlalchemy.orm import Session
@@ -9,7 +9,8 @@ router = APIRouter(
 )
 
 @router.get("/", response_model=list[schemas.Post])
-def get_posts(db: Session = Depends(get_db)):
+def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    print(current_user.email)
     posts = db.query(models.Posts).all()
     return posts
 # doing it using pure sql and postgres driver
@@ -21,9 +22,10 @@ def get_posts(db: Session = Depends(get_db)):
 # creating a post
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
-def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db)):
+def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    print(current_user.email)
     # creating the new post using unpacking.
-    new_post = models.Posts(**post.dict())
+    new_post = models.Posts(owner_id=current_user.id, **post.dict())
     # new_post = models.Posts(title=post.title, content=post.content, published=post.published)
     db.add(new_post) # the post to the database
     db.commit() # commit the changes
@@ -40,7 +42,7 @@ def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db)):
 # getting an individual post
 
 @router.get("/{id}", response_model=schemas.Post)
-def get_post(id: int, db: Session = Depends(get_db)):
+def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     query = db.query(models.Posts).filter(models.Posts.id == id)
     post = query.first()
     
@@ -71,14 +73,18 @@ def get_post(id: int, db: Session = Depends(get_db)):
 # Deleting a post with an id
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db)):
+def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     query = db.query(models.Posts).filter(models.Posts.id == id)
 # Using pure sql and using sql drivers     
     # cursor.execute("""DELETE FROM posts WHERE post_id = %s RETURNING *""", (str(id)))
     # deleted_post = cursor.fetchone()
     # conn.commit()
-    if query.first() == None:
+    post = query.first()
+    if post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The post with id:{id} was not found")
+    # User should not be able to delete the post that he doesnot created
+    if not post.owner_id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Not authorized to perform requested action")
     # chain the query with delete method to delete the post
     query.delete(synchronize_session=False)
     # commit the changes
@@ -95,21 +101,27 @@ def delete_post(id: int, db: Session = Depends(get_db)):
     # return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.put("/{id}", status_code=status.HTTP_202_ACCEPTED, response_model=schemas.Post)
-def update_post(id: int, post: schemas.CreatePost, db: Session = Depends(get_db)):
+def update_post(id: int, post: schemas.CreatePost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     query = db.query(models.Posts).filter(models.Posts.id == id)
 # Using pure sql and using sql drivers   
     # cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s WHERE post_id = %s RETURNING *""", (post.title, post.content, post.published, str(id)))
     # updated_post = cursor.fetchone()
     # conn.commit()
+    re_post = query.first()
     
-    if query.first() == None:
+    if re_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id : {id} not found")
+    
+    # User should not be able to delete the post that he doesnot created
+    if not re_post.owner_id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Not authorized to perform requested action")
+    
     # chaining update function, pass the update as a dictionary
     query.update(post.dict(), synchronize_session=False)
     db.commit()
     print("updated post successfully!")
-    print("updated_post : ", query.first())
-    return query.first()
+    print("updated_post : ", re_post)
+    return re_post
 
 
     # index = find_index(id)
