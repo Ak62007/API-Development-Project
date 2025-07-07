@@ -2,6 +2,7 @@ from app.database import Base
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
+from sqlalchemy.orm import Relationship
 
 
 # Creating the model on which is actually our table that will be created in the database.
@@ -15,6 +16,8 @@ class Posts(Base):
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text('now()'))
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    
+    owner = Relationship("Users") # sqlalchemy actually understands the relationship of the tables and for eg here both tables are related by ownerid.
     
 class Users(Base):
     __tablename__ = 'users'

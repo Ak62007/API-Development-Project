@@ -2,6 +2,7 @@ from app import schemas, models, oauth2
 from app.database import get_db
 from fastapi import Response, HTTPException, status, Depends, APIRouter
 from sqlalchemy.orm import Session
+from typing import Optional
 
 router = APIRouter(
     prefix="/posts",
@@ -9,9 +10,13 @@ router = APIRouter(
 )
 
 @router.get("/", response_model=list[schemas.Post])
-def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    print(current_user.email)
-    posts = db.query(models.Posts).all()
+def get_posts(db: Session = Depends(get_db),
+              current_user: int = Depends(oauth2.get_current_user),
+              limit: int = 10,
+              skip: int = 0,
+              search: Optional[str] = ""):
+    
+    posts = db.query(models.Posts).filter(models.Posts.title.contains(search)).limit(limit).offset(skip).all()
     return posts
 # doing it using pure sql and postgres driver
     # cursor.execute("""SELECT * FROM posts""")
@@ -23,7 +28,7 @@ def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
 def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    print(current_user.email)
+    
     # creating the new post using unpacking.
     new_post = models.Posts(owner_id=current_user.id, **post.dict())
     # new_post = models.Posts(title=post.title, content=post.content, published=post.published)
@@ -48,6 +53,9 @@ def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends
     
     if post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id : {id} was not found")
+    
+    # if post.owner_id != current_user.id:
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action")
     return post
 
 # Using pure sql and using sql drivers    
