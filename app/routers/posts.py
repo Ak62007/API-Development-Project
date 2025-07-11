@@ -2,6 +2,7 @@ from app import schemas, models, oauth2
 from app.database import get_db
 from fastapi import Response, HTTPException, status, Depends, APIRouter
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import Optional
 
 router = APIRouter(
@@ -9,14 +10,17 @@ router = APIRouter(
     tags=["posts"]
 )
 
-@router.get("/", response_model=list[schemas.Post])
+# @router.get("/", response_model=list[schemas.Post])
+@router.get("/", response_model=list[schemas.PostOut])
 def get_posts(db: Session = Depends(get_db),
               current_user: int = Depends(oauth2.get_current_user),
               limit: int = 10,
               skip: int = 0,
               search: Optional[str] = ""):
     
-    posts = db.query(models.Posts).filter(models.Posts.title.contains(search)).limit(limit).offset(skip).all()
+    # posts = db.query(models.Posts).filter(models.Posts.title.contains(search)).limit(limit).offset(skip).all()
+    
+    posts = db.query(models.Posts, func.count(models.Votes.post_id).label("votes")).join(models.Votes, models.Posts.id == models.Votes.post_id, isouter=True).group_by(models.Posts.id).filter(models.Posts.title.contains(search)).limit(limit).offset(skip).all()
     return posts
 # doing it using pure sql and postgres driver
     # cursor.execute("""SELECT * FROM posts""")
@@ -46,9 +50,11 @@ def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db), curren
 
 # getting an individual post
 
-@router.get("/{id}", response_model=schemas.Post)
+@router.get("/{id}", response_model=schemas.PostOut)
 def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    query = db.query(models.Posts).filter(models.Posts.id == id)
+    # query = db.query(models.Posts).filter(models.Posts.id == id)
+    query = db.query(models.Posts, func.count(models.Votes.post_id).label("votes")).join(models.Votes, models.Posts.id == models.Votes.post_id, isouter=True).group_by(models.Posts.id).filter(models.Posts.id == id)
+    
     post = query.first()
     
     if post == None:
