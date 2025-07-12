@@ -20,7 +20,7 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"messaege": "Hii! my name is Aditya!"}
+    return {"messaege": "Hii! my name is Aditya!!!!!!!"}
 
 # connecting Routes
 app.include_router(posts.router)
