@@ -1,0 +1,14 @@
+[Unit]
+Description=gunicorn instance to service api
+After=network.target
+
+[Service]
+User=aditya
+Group=aditya
+WorkingDirectory=/home/aditya/app/API-Development-Project
+Environment="PATH=/home/aditya/app/myenv/bin"
+EnvironmentFile=/home/aditya/.env
+ExecStart=/home/aditya/app/myenv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
+
+[Install]
+WantedBy=multi-user.target
