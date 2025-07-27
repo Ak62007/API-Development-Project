@@ -47,3 +47,17 @@ def test_deposit(bank_account):
 def test_interest(bank_account):
     bank_account.get_interest()
     assert round(bank_account.balance, 4) == 55
+    
+@pytest.mark.parametrize("deposited, withdrew, expected", [
+    (100, 50, 50),
+    (200, 10, 190),
+    (300, 150, 150),
+])
+def test_deposit_withdrawal(zero_bank_balance, deposited, withdrew, expected):
+    zero_bank_balance.deposit(deposited)
+    zero_bank_balance.withdraw(withdrew)
+    assert zero_bank_balance.balance == expected
+    
+def test_exception(bank_account):
+    with pytest.raises(InsufficientFunds):
+        bank_account.withdraw(200)

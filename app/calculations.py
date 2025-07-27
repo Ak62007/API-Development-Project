@@ -1,3 +1,6 @@
+class InsufficientFunds(Exception):
+    pass
+
 def add(num1: int, num2: int):
     return num1 + num2
 
@@ -15,6 +18,8 @@ class BankAcount():
         self.balance = initial_balance
         
     def withdraw(self, amount: int):
+        if amount > self.balance:
+            raise InsufficientFunds("Not sufficient balance withdraw")
         self.balance -= amount
         
     def deposit(self, amount: int):
