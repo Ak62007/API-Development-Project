@@ -81,7 +81,7 @@ jobs:
       - name: pulling git repo
         uses: actions/checkout@v2
       - name: deploying to heroku
-        uses: ElayGelbart/Heroku-Auto-Deployment@v1.0.6
+        uses: CDNievas/heroku-action@v1.0
         with:
           heroku_email: ${{secrets.HEROKU_EMAIL}}
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
