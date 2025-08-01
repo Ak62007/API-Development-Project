@@ -57,25 +57,25 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     environment:
       name: production
+    
+    # Set the Heroku API key as an environment variable for all steps in this job
+    env:
+      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
     steps:
       - name: pulling git repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history for Heroku
+          fetch-depth: 0
 
       - name: Install Heroku CLI
-        run: |
-          curl https://cli-assets.heroku.com/install.sh | sh
-
-      - name: Login to Heroku
-        run: |
-          echo "${{ secrets.HEROKU_API_KEY }}" | heroku auth:token
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+      
+      # The login step is no longer needed and should be removed.
+      # The CLI will use the environment variable set above.
 
       - name: Add Heroku remote
-        run: |
-          heroku git:remote -a ${{ secrets.HEROKU_APP_NAME }}
+        run: heroku git:remote -a ${{ secrets.HEROKU_APP_NAME }}
 
       - name: Deploy to Heroku
-        run: |
-          git push heroku HEAD:main
+        run: git push heroku HEAD:main --force
