@@ -58,10 +58,6 @@ jobs:
     environment:
       name: production
     
-    # Set the Heroku API key as an environment variable for all steps in this job
-    env:
-      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-
     steps:
       - name: pulling git repo
         uses: actions/checkout@v4
@@ -70,11 +66,24 @@ jobs:
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
-      
-      # The login step is no longer needed and should be removed.
-      # The CLI will use the environment variable set above.
+
+      - name: Configure Git for Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+        run: |
+          cat > ~/.netrc <<EOF
+          machine api.heroku.com
+              login $HEROKU_EMAIL
+              password $HEROKU_API_KEY
+          machine git.heroku.com
+              login $HEROKU_EMAIL
+              password $HEROKU_API_KEY
+          EOF
 
       - name: Add Heroku remote
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku git:remote -a ${{ secrets.HEROKU_APP_NAME }}
 
       - name: Deploy to Heroku
